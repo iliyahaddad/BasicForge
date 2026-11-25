@@ -1,0 +1,117 @@
+# BasicForge Grammar (EBNF)
+
+**Version:** 0.1  
+**Format:** ISO/IEC 14977 Extended Backus-Naur Form  
+**Status:** Milestone 3 target (describes intended grammar; subset implemented)
+
+## Lexical tokens
+
+```ebnf
+letter = "A" | "B" | ... | "Z" | "a" | "b" | ... | "z" .
+digit  = "0" | "1" | ... | "9" .
+idstart = letter | "_" .
+idpart = idstart | digit .
+
+identifier = idstart { idpart } .
+
+integer = digit { digit } .
+double = digit { digit } "." digit { digit } .
+string = '"' { char } '"' .
+```
+
+Comments begin with `'` and end at newline. Whitespace (space, tab, CR, LF)
+separates tokens but is otherwise insignificant.
+
+Keywords are case-insensitive. `End X` is always two tokens.
+
+## Grammar
+
+```ebnf
+program = { module } .
+
+module = "Module" identifier { procedure | class } "End" "Module" .
+
+procedure = sub | function .
+
+sub = "Sub" identifier "(" [ parameterList ] ")" [ "As" type ] block "End" "Sub" .
+
+function = "Function" identifier "(" [ parameterList ] ")" "As" type block "End" "Function" .
+
+parameterList = parameter { "," parameter } .
+parameter = identifier "As" type .
+
+block = { statement } .
+
+statement = dimStmt
+        | printStmt
+        | returnStmt
+        | ifStmt
+        | forStmt
+        | whileStmt
+        | selectStmt
+        | expressionStmt
+        | assignmentStmt   {planned}
+        | callStmt .
+
+dimStmt = "Dim" identifier [ "As" type ] [ "=" expression ] .
+
+printStmt = "Print" "(" expression { "," expression } ")" .
+
+returnStmt = "Return" [ expression ] .
+
+ifStmt = "If" expression "Then" block [ "Else" block ] "End" "If" .
+
+forStmt = "For" identifier "As" type "=" expression "To" expression [ "Step" expression ] block "Next" .
+
+whileStmt = "While" expression block "End" "While" .
+
+selectStmt = "Select" "Case" expression { caseClause } "End" "Select" .
+
+caseClause = "Case" expression { "," expression } block
+         | "Case" "Else" block .
+
+expressionStmt = expression .
+
+callStmt = identifier "(" [ argumentList ] ")" .
+
+argumentList = expression { "," expression } .
+
+assignmentStmt = identifier "=" expression . {planned}
+
+type = "Integer" | "Long" | "Single" | "Double" | "Boolean" | "String" .
+
+expression = equalityExpr .
+
+equalityExpr = comparisonExpr { ("=" | "<>") comparisonExpr } .
+
+comparisonExpr = term { ("<" | ">" | "<=" | ">=") term } .
+
+term = factor { ("+" | "-" | "&") factor } .
+
+factor = unary { ("*" | "/" | "\" | "Mod" | "^") unary } .
+
+unary = ["-" | "Not"] unary | primary .
+
+primary = integerLiteral
+        | doubleLiteral
+        | stringLiteral
+        | "True" | "False"
+        | identifier
+        | "(" expression ")"
+        | callExpr .
+
+callExpr = identifier "(" [ argumentList ] ")" .
+
+class = "Class" identifier "End" "Class" . {planned}
+```
+
+## Notes
+
+- `End If`, `End Sub`, `End Function`, `End While`, `End Select`, `End Module`,
+  `End Class` are always two tokens.
+- `Case Else` is two tokens.
+- `Dim x = initializer` (type inference) requires the initializer; `As type` is
+  optional only when an initializer is present.
+- `Step` in `For` defaults to 1 when omitted.
+- Assignment and user-defined types (class, enum, structure) are planned and
+  not yet in the implemented grammar.

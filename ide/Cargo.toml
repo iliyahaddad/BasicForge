@@ -1,0 +1,36 @@
+[package]
+name = "basicforge-ide"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+egui = "0.29"
+eframe = "0.29"
+egui-winit = "0.29"
+egui-wgpu = "0.29"
+winit = "0.29"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+salsa = "0.22"
+tree-sitter = "0.25"
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_System_Diagnostics_Debug", "Win32_Security"] }
+
+[dev-dependencies]
+criterion = "0.5"
+tempfile = "3"
+tokio = { version = "1", features = ["full"] }
+proptest = "1.0"
+mockall = "0.12"
+serial_test = "2"
+
+[build-dependencies]
+cc = "1.0"
+vergen = { version = "7", features = ["build", "cargo", "git", "rustc"] }
+
+[[bench]]
+name = "ide_benchmarks"
+harness = false

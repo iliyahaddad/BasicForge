@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "18.1.8"
+          directory: "C:/Program Files/LLVM"
+
+      - name: Configure
+        run: cmake -S compiler -B build -G "Visual Studio 17 2022" -A x64 -DBFC_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Copy-Item build/Release/bfc.exe dist/bfc.exe
+          Copy-Item examples -Destination dist/examples -Recurse
+          Copy-Item libraries -Destination dist/libraries -Recurse
+          Copy-Item sdks -Destination dist/sdks -Recurse
+          Copy-Item README.md,CHANGELOG.md,LICENSE -Destination dist
+          Compress-Archive -Path dist/* -DestinationPath basicforge-${{ github.ref_name }}-win-x64.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: basicforge-win-x64
+          path: basicforge-*.zip
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: basicforge-*.zip
+          generate_release_notes: true

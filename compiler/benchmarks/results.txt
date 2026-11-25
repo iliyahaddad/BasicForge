@@ -1,0 +1,18 @@
+bench_arithmetic        78.25 ms  => 50000005000000
+[FAIL] bench_array : compilation
+bench_class             95.31 ms  => 1000000
+bench_min               61.85 ms  => 
+bench_string           326.88 ms  => 10000
+bench_test              68.90 ms  => 500000500000
+bench                   83.53 ms  => 500000500000 | 479001600 | 75 | 25 | 1250 | 2
+bench10                 66.70 ms  => 10
+bench11                 81.63 ms  => 5
+bench12                 68.98 ms  => 
+bench2                  64.42 ms  => 5000050000
+bench3                  64.27 ms  => 0
+bench4                  66.73 ms  => 
+bench5                  73.02 ms  => 10
+bench6                  67.45 ms  => 1
+bench7                  72.15 ms  => 10
+bench8                  69.59 ms  => 10
+bench9                  82.10 ms  => 10

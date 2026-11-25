@@ -1,0 +1,35 @@
+; Codegen: Classes, Properties, Constructors, Methods
+; RUN: %bfc %s -o %t.exe
+; RUN: %t.exe | FileCheck %s
+
+Module Test
+    Public Class Person
+        Public Property Name As String
+        Public Property Age As Integer
+        
+        Public Sub New(name As String, age As Integer)
+            Me.Name = name
+            Me.Age = age
+        End Sub
+        
+        Public Sub Greet()
+            Print("Hello, " + Me.Name + " (age " + CStr(Me.Age) + ")")
+        End Sub
+    End Class
+    
+    Sub Main()
+        Dim p As Person = New Person("Alice", 30)
+        p.Greet()
+        
+        Dim q As Person = New Person("Bob", 25)
+        q.Greet()
+        
+        Print("Name: " + p.Name)
+        Print("Age: " + CStr(p.Age))
+    End Sub
+End Module
+
+; CHECK: Hello, Alice (age 30)
+; CHECK: Hello, Bob (age 25)
+; CHECK: Name: Alice
+; CHECK: Age: 30

@@ -1,0 +1,67 @@
+; Parser: Declarations
+; RUN: %bfc --parse-only %s 2>&1 | FileCheck %s
+
+Module Test
+    Public Class Person
+        Public Property Name As String
+        Public Property Age As Integer
+        
+        Public Sub New(name As String, age As Integer)
+            Me.Name = name
+            Me.Age = age
+        End Sub
+        
+        Public Sub Greet()
+            Print("Hello, " + Me.Name)
+        End Sub
+    End Class
+    
+    Public Interface ILogger
+        Sub Log(message As String)
+    End Interface
+    
+    Public Class ConsoleLogger Implements ILogger
+        Public Sub Log(message As String)
+            Print("LOG: " + message)
+        End Sub
+    End Class
+    
+    Public Enum Color
+        Red = 1
+        Green = 2
+        Blue = 3
+    End Enum
+    
+    Structure Point
+        Public X As Integer
+        Public Y As Integer
+    End Structure
+    
+    Sub Main()
+        Dim p As Person = New Person("Alice", 30)
+        p.Greet()
+        
+        Dim logger As ILogger = New ConsoleLogger()
+        logger.Log("Test")
+        
+        Dim c As Color = Color.Red
+        Print(c)
+        
+        Dim pt As Point
+        pt.X = 10
+        pt.Y = 20
+        Print(pt.X)
+        Print(pt.Y)
+    End Sub
+End Module
+
+; CHECK: Module
+; CHECK: Class Person
+; CHECK: Property Name As String
+; CHECK: Property Age As Integer
+; CHECK: Sub New
+; CHECK: Interface ILogger
+; CHECK: Implements ILogger
+; CHECK: Enum Color
+; CHECK: Structure Point
+; CHECK: Sub Main

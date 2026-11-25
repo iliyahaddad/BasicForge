@@ -1,0 +1,27 @@
+{
+  "name": "tree-sitter-basicforge",
+  "version": "0.1.0",
+  "description": "BasicForge language grammar for Tree-sitter",
+  "main": "bindings/node",
+  "files": [
+    "grammar.js",
+    "src/**/*.c",
+    "src/**/*.h",
+    "bindings/node",
+    "tree-sitter.json"
+  ],
+  "keywords": [
+    "tree-sitter",
+    "basicforge",
+    "grammar"
+  ],
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "tree-sitter-cli": "^0.22.0"
+  },
+  "scripts": {
+    "build": "tree-sitter build",
+    "test": "tree-sitter test"
+  }
+}

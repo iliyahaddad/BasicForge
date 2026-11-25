@@ -1,0 +1,15 @@
+[package]
+name = "basicforge-regression"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+basicforge-ide = { path = "../ide" }
+tempfile = "3"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[test]]
+name = "regression"
+harness = false

@@ -1,0 +1,26 @@
+; Lexer: Literals (strings, numbers, booleans)
+; RUN: %bfc --tokens %s 2>&1 | FileCheck %s
+
+Module Test
+Sub Main()
+    Dim s As String = "Hello World"
+    Dim i As Integer = 42
+    Dim d As Double = 3.14159
+    Dim b As Boolean = True
+    Dim f As Single = 1.5
+    Dim l As Long = 9223372036854775807
+    Print(s)
+    Print(i)
+    Print(d)
+    Print(b)
+    Print(f)
+    Print(l)
+End Sub
+End Module
+
+; CHECK: "Hello World"
+; CHECK: 42
+; CHECK: 3.14159
+; CHECK: True
+; CHECK: 1.5
+; CHECK: 9223372036854775807

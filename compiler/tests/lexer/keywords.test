@@ -1,0 +1,55 @@
+; Lexer: Keywords (case-insensitive)
+; RUN: %bfc --tokens %s 2>&1 | FileCheck %s
+
+Module Test
+Sub Main()
+    Dim x As Integer = 5
+    If x >= 10 Then
+        Print("Greater")
+    Else
+        Print("Less")
+    End If
+    For i = 1 To 10
+        Print(i)
+    Next
+    While True
+        Exit While
+    End While
+    Select Case 1
+        Case 1
+            Print("One")
+        Case Else
+            Print("Other")
+    End Select
+    Try
+        Throw
+    Catch ex As Exception
+        Print("Caught")
+    Finally
+        Print("Done")
+    End Try
+End Sub
+End Module
+
+; CHECK: Module
+; CHECK: Test
+; CHECK: Sub
+; CHECK: Main
+; CHECK: Dim
+; CHECK: Integer
+; CHECK: If
+; CHECK: Then
+; CHECK: Else
+; CHECK: End If
+; CHECK: For
+; CHECK: To
+; CHECK: Next
+; CHECK: While
+; CHECK: End While
+; CHECK: Select Case
+; CHECK: Case
+; CHECK: End Select
+; CHECK: Try
+; CHECK: Catch
+; CHECK: Finally
+; CHECK: End Try

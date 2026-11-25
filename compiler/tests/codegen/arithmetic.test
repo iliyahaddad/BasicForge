@@ -1,0 +1,31 @@
+; Codegen: Arithmetic Operations
+; RUN: %bfc %s -o %t.exe
+; RUN: %t.exe | FileCheck %s
+
+Module Test
+Sub Main()
+    Dim a As Integer = 10
+    Dim b As Integer = 3
+    
+    Print(a + b)   ; 13
+    Print(a - b)   ; 7
+    Print(a * b)   ; 30
+    Print(a \ b)   ; 3 (integer division)
+    Print(a Mod b) ; 1
+    Print(a ^ b)   ; 1000 (power)
+    
+    Dim d1 As Double = 10.5
+    Dim d2 As Double = 2.5
+    Print(d1 + d2) ; 13.0
+    Print(d1 / d2) ; 4.2
+End Sub
+End Module
+
+; CHECK: 13
+; CHECK: 7
+; CHECK: 30
+; CHECK: 3
+; CHECK: 1
+; CHECK: 1000
+; CHECK: 13.0
+; CHECK: 4.2

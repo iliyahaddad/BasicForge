@@ -1,0 +1,8 @@
+Module TestBench
+
+Sub Main()
+    Dim x As Integer = 5
+    x = 10
+End Sub
+
+End Module

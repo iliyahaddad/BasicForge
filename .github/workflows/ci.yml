@@ -1,0 +1,356 @@
+name: BasicForge CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main, develop]
+
+env:
+  RUST_VERSION: 'stable'
+  VERSION: ${{ github.ref_name }}
+
+jobs:
+  # Compiler tests (C++)
+  compiler-tests:
+    name: Compiler Tests (C++)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Install LLVM
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "17.0.6"
+          directory: ${{ runner.temp }}/llvm
+      
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.28'
+      
+      - name: Configure compiler
+        working-directory: ./compiler
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBFC_WITH_LLVM=ON \
+            -DBFC_BUILD_TESTS=ON \
+            -DLLVM_DIR=${{ runner.temp }}/llvm/lib/cmake/llvm
+      
+      - name: Build compiler
+        working-directory: ./compiler
+        run: cmake --build build --config Release --parallel
+      
+      - name: Run compiler tests
+        working-directory: ./compiler
+        run: |
+          cd build
+          ctest -C Release --output-on-failure
+      
+      - name: Run Lit tests
+        working-directory: ./compiler
+        run: |
+          python -m pip install lit
+          lit -v tests/
+        env:
+          BFC_EXE: ${{ github.workspace }}/compiler/build/Release/bfc.exe
+      
+      - name: Upload compiler artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: bfc-executable
+          path: compiler/build/Release/bfc.exe
+          retention-days: 7
+
+  # IDE tests (Rust)
+  ide-tests:
+    name: IDE Tests (Rust)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ide/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Check formatting
+        working-directory: ./ide
+        run: cargo fmt --all -- --check
+      
+      - name: Run clippy
+        working-directory: ./ide
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      
+      - name: Build IDE
+        working-directory: ./ide
+        run: cargo build --release
+      
+      - name: Run IDE tests
+        working-directory: ./ide
+        run: cargo test --release -- --test-threads=4
+      
+      - name: Upload IDE artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ide-executable
+          path: ide/target/release/basicforge-ide.exe
+          retention-days: 7
+
+  # IDE Benchmarks
+  ide-benchmarks:
+    name: IDE Benchmarks
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: ide-tests
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            ide/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Run benchmarks
+        working-directory: ./ide
+        run: cargo bench --release -- --save-baseline main
+      
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: ide/target/criterion
+          retention-days: 30
+
+  # Integration tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: [compiler-tests, ide-tests]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download compiler artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bfc-executable
+          path: compiler/build/Release
+      
+      - name: Download IDE artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ide-executable
+          path: ide/target/release
+      
+      - name: Test basic compilation
+        run: |
+          # Create test file
+          echo "Module Test" > test.bf
+          echo "Sub Main()" >> test.bf
+          echo '  Print("Hello from CI")' >> test.bf
+          echo "End Sub" >> test.bf
+          echo "End Module" >> test.bf
+          
+          # Compile
+          compiler\build\Release\bfc.exe test.bf -o test.exe
+          
+          # Run
+          test.exe
+      
+      - name: Test IDE CLI (if available)
+        run: |
+          ide\target\release\basicforge-ide.exe --version || true
+      
+      - name: Run regression tests
+        run: |
+          # Test all milestone examples
+          for f in examples/milestone3/*.bf; do
+            echo "Testing $f..."
+            compiler\build\Release\bfc.exe "$f" -o test_reg.exe 2>&1 | head -20
+            if [ -f test_reg.exe ]; then
+              test_reg.exe || true
+            fi
+          done
+
+  # Release packaging
+  release:
+    name: Create Release
+    runs-on: windows-latest
+    timeout-minutes: 30
+    needs: [compiler-tests, ide-tests, integration-tests]
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Install LLVM
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "17.0.6"
+          directory: ${{ runner.temp }}/llvm
+      
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: '3.28'
+      
+      - name: Build compiler (Release)
+        working-directory: ./compiler
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBFC_WITH_LLVM=ON \
+            -DLLVM_DIR=${{ runner.temp }}/llvm/lib/cmake/llvm
+          cmake --build build --config Release --parallel
+      
+      - name: Build IDE (Release)
+        working-directory: ./ide
+        run: cargo build --release
+      
+      - name: Create portable package
+        run: |
+          $version = "${{ github.ref_name }}"
+          $version = $version.TrimStart('v')
+          
+          $portableDir = "release/BasicForgeIDE_Portable_$version"
+          New-Item -ItemType Directory -Path $portableDir -Force | Out-Null
+          New-Item -ItemType Directory -Path "$portableDir/bin" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$portableDir/runtime" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$portableDir/sdks" -Force | Out-Null
+          New-Item -ItemType Directory -Path "$portableDir/samples" -Force | Out-Null
+          
+          Copy-Item "compiler/build/Release/bfc.exe" "$portableDir/bin/"
+          Copy-Item "ide/target/release/basicforge-ide.exe" "$portableDir/bin/"
+          Copy-Item "runtime" "$portableDir/runtime" -Recurse -Force
+          Copy-Item "sdks" "$portableDir/sdks" -Recurse -Force
+          Copy-Item "samples" "$portableDir/samples" -Recurse -Force
+          Copy-Item "LICENSE" "$portableDir/"
+          Copy-Item "README.md" "$portableDir/"
+          
+          # Create launcher
+          "@echo off`nset PATH=%~dp0bin;%PATH%`nstart `"`"`" `%~dp0bin\basicforge-ide.exe`" `%*`" | Out-File -Encoding ASCII "$portableDir/BasicForgeIDE.bat"
+          
+          # Create ZIP
+          Compress-Archive -Path "$portableDir/*" -DestinationPath "release/BasicForgeIDE_Portable_$version.zip" -Force
+        shell: pwsh
+      
+      - name: Create installer (if Inno Setup available)
+        run: |
+          if (Get-Command iscc -ErrorAction SilentlyContinue) {
+            iscc installer.iss
+          } else {
+            Write-Host "Inno Setup not available, skipping installer"
+          }
+        shell: pwsh
+        continue-on-error: true
+      
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets
+          path: release/
+          retention-days: 90
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/BasicForgeIDE_Portable_${{ github.ref_name }}.zip
+            release/BasicForgeIDE_Setup_${{ github.ref_name }}.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Security audit
+  security-audit:
+    name: Security Audit
+    runs-on: windows-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Run cargo audit
+        working-directory: ./ide
+        run: |
+          cargo install cargo-audit
+          cargo audit
+      
+      - name: Run cargo deny
+        working-directory: ./ide
+        run: |
+          cargo install cargo-deny
+          cargo deny check
+
+  # Documentation
+  docs:
+    name: Build Documentation
+    runs-on: windows-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Build docs
+        working-directory: ./ide
+        run: cargo doc --no-deps --all-features
+      
+      - name: Upload docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: ide/target/doc
+          retention-days: 30
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

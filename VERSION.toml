@@ -1,0 +1,23 @@
+# BasicForge Version Information
+
+[version]
+major = 0
+minor = 1
+patch = 0
+pre_release = ""
+build_metadata = ""
+
+# Full version string
+full = "0.1.0"
+
+# Git information (filled in during build)
+git_commit = ""
+git_branch = ""
+git_tag = ""
+build_date = ""
+build_host = ""
+
+# Component versions
+compiler_version = "0.1.0"
+ide_version = "0.1.0"
+runtime_version = "0.1.0"

@@ -1,0 +1,51 @@
+; Codegen: Control Flow (If, For, While, Select)
+; RUN: %bfc %s -o %t.exe
+; RUN: %t.exe | FileCheck %s
+
+Module Test
+Sub Main()
+    ; If/Else
+    Dim x As Integer = 10
+    If x > 5 Then
+        Print("Greater")
+    Else
+        Print("Less")
+    End If
+    
+    ; For loop
+    For i As Integer = 1 To 5
+        Print(i)
+    Next
+    
+    ; While loop
+    Dim w As Integer = 1
+    While w <= 3
+        Print("W" + CStr(w))
+        w = w + 1
+    End While
+    
+    ; Select Case
+    Dim s As Integer = 2
+    Select Case s
+        Case 1
+            Print("One")
+        Case 2
+            Print("Two")
+        Case 3
+            Print("Three")
+        Case Else
+            Print("Other")
+    End Select
+End Sub
+End Module
+
+; CHECK: Greater
+; CHECK: 1
+; CHECK: 2
+; CHECK: 3
+; CHECK: 4
+; CHECK: 5
+; CHECK: W1
+; CHECK: W2
+; CHECK: W3
+; CHECK: Two

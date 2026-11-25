@@ -1,0 +1,11 @@
+; Integration: Hello World Full Pipeline
+; RUN: %bfc %s -o %t.exe
+; RUN: %t.exe | FileCheck %s
+
+Module Test
+Sub Main()
+    Print("Hello World")
+End Sub
+End Module
+
+; CHECK: Hello World

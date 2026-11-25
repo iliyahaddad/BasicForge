@@ -1,0 +1,56 @@
+# Fuzzing corpus for BasicForge
+# These are seed files for fuzz testing
+
+# Valid programs
+Module Test
+Sub Main()
+    Print("Hello")
+End Sub
+End Module
+
+# Edge cases
+Module
+Sub
+End
+
+# Invalid programs
+Module Test
+Sub Main(
+End Sub
+
+# Unicode
+Module Tëst
+Sub Main()
+    Dim 变量 As Integer = 42
+End Sub
+End Module
+
+# Deep nesting
+Module Test
+Sub Main()
+    If True Then
+        If True Then
+            If True Then
+                Print("deep")
+            End If
+        End If
+    End If
+End Sub
+End Module
+
+# Large numbers
+Module Test
+Sub Main()
+    Dim x As Long = 999999999999
+    Dim y As Double = 3.14159265358979
+End Sub
+End Module
+
+# String edge cases
+Module Test
+Sub Main()
+    Dim s As String = ""
+    Dim t As String = "with ""escaped"" quotes"
+    Dim u As String = "tab\there"
+End Sub
+End Module

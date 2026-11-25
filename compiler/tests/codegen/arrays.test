@@ -1,0 +1,42 @@
+; Codegen: Arrays and ForEach
+; RUN: %bfc %s -o %t.exe
+; RUN: %t.exe | FileCheck %s
+
+Module Test
+Sub Main()
+    ; Array declaration and access
+    Dim arr(5) As Integer
+    arr(0) = 10
+    arr(1) = 20
+    arr(2) = 30
+    
+    Print(arr(0))
+    Print(arr(1))
+    Print(arr(2))
+    
+    ; ForEach loop
+    Dim sum As Integer = 0
+    For Each x In arr
+        sum = sum + x
+    Next
+    Print("Sum: " + CStr(sum))
+    
+    ; Array of strings
+    Dim names(2) As String
+    names(0) = "Alice"
+    names(1) = "Bob"
+    names(2) = "Charlie"
+    
+    For Each n In names
+        Print("Name: " + n)
+    Next
+End Sub
+End Module
+
+; CHECK: 10
+; CHECK: 20
+; CHECK: 30
+; CHECK: Sum: 60
+; CHECK: Name: Alice
+; CHECK: Name: Bob
+; CHECK: Name: Charlie

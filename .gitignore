@@ -1,0 +1,39 @@
+# Build outputs
+build/
+target/
+obj/
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ilk
+*.hash
+*.zip
+
+# Generated compiler artifacts
+_bfc_*.bat
+bf_expanded.bf
+/test_*.c
+/01_*.c
+/min_*.c
+
+# IDE
+ide/target/
+*.profraw
+
+# OS
+Thumbs.db
+.DS_Store
+# CMake generated files (any directory)
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+compile_commands.json
+
+# IDE/build-system generated state
+.vs/
+.vscode/
+*.user
+*.suo

@@ -1,0 +1,38 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM
+        uses: KyleMayes/install-llvm-action@v2
+        with:
+          version: "18.1.8"
+          directory: "C:/Program Files/LLVM"
+
+      - name: Configure
+        run: cmake -S compiler -B build -G "Visual Studio 17 2022" -A x64 -DBFC_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --config Release
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Smoke test examples
+        shell: pwsh
+        run: |
+          $fail = 0
+          Get-ChildItem examples/*.bf | ForEach-Object {
+            $name = $_.BaseName
+            & build/Release/bfc.exe $_.FullName -o "$name.exe" 2>&1 | Out-Null
+            if (-not (Test-Path "$name.exe")) { Write-Host "FAIL compile $name"; $fail++ }
+          }
+          if ($fail -ne 0) { exit 1 }
